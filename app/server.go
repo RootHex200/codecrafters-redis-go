@@ -5,8 +5,6 @@ import (
 	"strings"
 
 	"regexp"
-
-	// Uncomment this block to pass the first stage
 	"net"
 	"os"
 )
