@@ -36,7 +36,6 @@ func parsedata(data string)(string){
 }
 
 func main() {
-	// You can use print statements as follows for debugging, they'll be visible when running tests.
 	fmt.Println("Logs from your program will appear here!")
 
 	l, err := net.Listen("tcp", "0.0.0.0:6379")
@@ -60,8 +59,7 @@ func main() {
 					conn.Write([]byte("+PONG\r\n"))
 				}else{
 					conn.Write([]byte(fmt.Sprintf("+%s\r\n",cmd)))
-				}
-				
+				}				
 			}
 			
 			
