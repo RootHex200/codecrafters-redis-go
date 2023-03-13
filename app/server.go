@@ -2,7 +2,10 @@ package main
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
+	"time"
+
 	// "strings"
 
 	"regexp"
@@ -29,7 +32,6 @@ func parsedata(data string)([]string){
     for _, match := range matches {
 		results = append(results, match[1])
     }
-	fmt.Printf("results:%s",results)
 	// joined := strings.Join(results, " ")
 	// results = results[:0]
 	return results
@@ -64,8 +66,8 @@ func main() {
 					return
 				}
 				cmd:=parsedata(string(buf[:n]))
-				fmt.Println("this is cmd:",len(cmd))
-				fmt.Println("this is cmd[0]:",strings.ToUpper(cmd[0]))
+				// fmt.Println("this is cmd:",len(cmd))
+				// fmt.Println("this is cmd[0]:",strings.ToUpper(cmd[0]))
 
 				switch strings.ToUpper(cmd[0]) {
 					case "PING":
@@ -88,8 +90,21 @@ func main() {
 					case "SET":
 						if(len(cmd)==3){
 							storage.data[cmd[1]]=cmd[2]
+							storage.createAt[fmt.Sprintf("PX-%v",cmd[1])]=0
 							conn.Write([]byte("+OK\r\n"))
-							fmt.Println(storage.data)
+							fmt.Println(storage)
+						}else if(len(cmd)==5){
+							if(strings.ToUpper(cmd[3])=="PX"){
+								i, err := strconv.ParseInt(cmd[4], 10, 64)
+								if err != nil {
+									fmt.Println("Error parsing string to int64:", err)
+									return
+								}
+								storage.data[cmd[1]]=cmd[2]
+								storage.createAt[fmt.Sprintf("PX-%v",cmd[1])]=time.Now().UnixMilli()+i
+								conn.Write([]byte("+OK\r\n"))
+								fmt.Println(storage)
+							}
 						}else{
 							conn.Write([]byte("+wrong command\r\n"))
 						}
@@ -97,19 +112,34 @@ func main() {
 						
 					case "GET":
 						findvalue:=make([]string,0)
-						fmt.Println(storage.data)
+						// fmt.Println(storage.data)
 						if(len(cmd)==2){
 							for key, value := range storage.data {
+								fmt.Print(key, value)
 								if(key==cmd[1]){
 									// conn.Write([]byte("+"+value+"\r\n"))
-									findvalue = append(findvalue, value)
-									break
+									for px_key, px_value := range storage.createAt {
+										if(fmt.Sprintf("PX-%v",key)==px_key){
+											if(px_value==0){
+												findvalue=append(findvalue,value)
+												break
+											}else if(time.Now().UnixMilli()>px_value){
+												findvalue = append(findvalue, "")
+												break
+											}else{
+												findvalue=append(findvalue,value)
+												break
+											}
+									}
 								}
+							}
 								
 						}
-						if(len(findvalue)==0){
+
+						if(len(findvalue)==0 || findvalue[0]==""){
 							conn.Write([]byte("$-1\r\n"))
 						}else{
+							fmt.Println(findvalue[0])
 							conn.Write([]byte("+"+findvalue[0]+"\r\n"))
 						}
 					}else{
