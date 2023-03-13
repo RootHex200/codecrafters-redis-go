@@ -112,7 +112,6 @@ func main() {
 						
 					case "GET":
 						findvalue:=make([]string,0)
-						// fmt.Println(storage.data)
 						if(len(cmd)==2){
 							for key, value := range storage.data {
 								fmt.Print(key, value)
@@ -135,7 +134,6 @@ func main() {
 							}
 								
 						}
-
 						if(len(findvalue)==0 || findvalue[0]==""){
 							conn.Write([]byte("$-1\r\n"))
 						}else{
