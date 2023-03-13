@@ -35,10 +35,19 @@ func parsedata(data string)([]string){
 	return results
 }
 
+type command struct {
+	arguments map[string]string
+	options map[string]string
+}
+type Strorage struct {
+	data map[string]string
+	createAt map[string]int64
+}
+
 func main() {
 	// You can use print statements as follows for debugging, they'll be visible when running tests.
 	fmt.Println("Logs from your program will appear here!")
-
+	storage:=Strorage{data: make(map[string]string),createAt: make(map[string]int64)}
 	l, err := net.Listen("tcp", "0.0.0.0:6379")
 	
 	nilcheck(err)
@@ -77,11 +86,35 @@ func main() {
 						
 						
 					case "SET":
-						conn.Write([]byte("+OK\r\n"))
+						if(len(cmd)==3){
+							storage.data[cmd[1]]=cmd[2]
+							conn.Write([]byte("+OK\r\n"))
+							fmt.Println(storage.data)
+						}else{
+							conn.Write([]byte("+wrong command\r\n"))
+						}
+						
 						
 					case "GET":
-						conn.Write([]byte("$"+cmd[1]+"\r\n"))
-						
+						findvalue:=make([]string,0)
+						fmt.Println(storage.data)
+						if(len(cmd)==2){
+							for key, value := range storage.data {
+								if(key==cmd[1]){
+									// conn.Write([]byte("+"+value+"\r\n"))
+									findvalue = append(findvalue, value)
+									break
+								}
+								
+						}
+						if(len(findvalue)==0){
+							conn.Write([]byte("$-1\r\n"))
+						}else{
+							conn.Write([]byte("+"+findvalue[0]+"\r\n"))
+						}
+					}else{
+						conn.Write([]byte("+wrong command\r\n"))
+					}
 					default:
 					conn.Write([]byte("-ERR unknown command '"+cmd[0]+"'\r\n"))
 				}
